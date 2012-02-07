@@ -92,7 +92,7 @@ to-report danger-ahead [x y]
   
   report answer
 end
-    
+   
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
