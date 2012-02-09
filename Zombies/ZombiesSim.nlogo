@@ -1,6 +1,7 @@
 breed [army armyman]
 breed [people person]
 breed [zombies zombie]
+breed [foodpiles foodpile]
 
 turtles-own [life]
 
@@ -21,6 +22,7 @@ to setup
   
   set-default-shape people "person"
   set-default-shape zombies "zombie"
+  set-default-shape foodpiles "cow"
   
   ask patches [
     set blood? false
@@ -32,6 +34,13 @@ to setup
   
   create-people people-start-amount [
     set-defaults-people
+    setxy random 100 - 50 random 100 - 50
+  ]
+  
+  create-foodpiles 2 [
+    set life 1000
+    set color pink
+    set size 3
     setxy random 100 - 50 random 100 - 50
   ]
   
@@ -47,6 +56,7 @@ to go
   move-people
   breed-people
   kill-people
+  eat-food-people
   
 end
   
@@ -130,7 +140,7 @@ to move-people
     set heading group-direction
     
     fd 1
-    set life life - (fear / 100)
+    set life life - 1
   ]
 end
 
@@ -150,6 +160,27 @@ to kill-people
   ]
 end
        
+to eat-food-people
+  ask people with [count foodpiles-here > 0] [
+    let food one-of foodpiles-here
+    
+    if food != nobody [
+      set life life + random [life] of food
+    
+      ask food [
+        set life life - 10
+      
+        if life <= 0 [
+          die
+        ]
+      ]
+    ]
+  ]
+end
+
+
+    
+    
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
