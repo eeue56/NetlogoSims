@@ -5,7 +5,7 @@ breed [zombies zombie]
 turtles-own [life]
 
 army-own [leader? group]
-people-own [fear group-direction]
+people-own [fear group-direction group]
 
 patches-own [blood? radiation? chemical? timeleft]
 
@@ -35,12 +35,22 @@ to setup
     setxy random 100 - 50 random 100 - 50
   ]
   
-  create-zombies 200 [
+  create-zombies 0 [
     set-defaults-zombies
     setxy random 100 - 50 random 100 - 50
   ]
   
 end
+
+to go
+  
+  move-people
+  breed-people
+  kill-people
+  
+end
+  
+  
 
 to set-defaults-people 
   set color white
@@ -48,6 +58,7 @@ to set-defaults-people
   set life 100
   set fear 0
   set group-direction random 360
+  set group 1 + [group] of min-one-of people [group]
 end
 
 to set-defaults-zombies
@@ -56,33 +67,39 @@ to set-defaults-zombies
   set life 0
 end
 
-to breed-people [parents]
+to breed-people 
   
-  let new-group-direction [group-direction] of one-of parents
+  ask people with [(count people-here = 2) and (fear < 80)] [
+    let parents people-here
+    let new-group-direction [group-direction] of one-of parents
+    let new-group [group] of min-one-of parents [group]
   
-  ask one-of parents[
-    hatch random 2 [ 
-      set life 100
-      set group-direction new-group-direction
+    ask one-of parents[
+      hatch random 2 [ 
+        set fear 0
+        set life 100
+        set group-direction new-group-direction
+        set group new-group
+      ]
     ]
-  ]
   
-  ask parents[
-    set life life / 2
-    set group-direction new-group-direction
+    ask parents[
+      set life life / 2
+      set group-direction new-group-direction
+      set group new-group
+    ]
   ]
 end
 
-to-report danger-ahead [x y]
+to-report danger-ahead [the-patch]
   let i 0
-  let current-patch patch-at x y
+  let current-patch the-patch
   let answer 0
   
   while [i <= people-sight] [
     ask current-patch [
       ask neighbors [
         set answer answer + count zombies-here
-        
       ]
       set current-patch one-of neighbors4
     ]
@@ -92,7 +109,47 @@ to-report danger-ahead [x y]
   
   report answer
 end
-   
+
+to move-people 
+  ask people [
+    if danger-ahead patch-here >= people-fear-retreat [
+      let run-direction group-direction
+      
+      if distance min-one-of zombies [distance myself] != 0 [
+        set run-direction subtract-headings towards min-one-of zombies [distance myself] 180
+      ]
+      
+      set group-direction run-direction
+      
+      if fear < 100 [ 
+        set fear fear + 5
+      ]
+      
+    ]
+    
+    set heading group-direction
+    
+    fd 1
+    set life life - (fear / 100)
+  ]
+end
+
+to kill-people
+  ask people with [life <= 0 ] [ 
+    ask people-here [ 
+      set fear fear + 5
+    ]
+    
+    let mygroup group
+    
+    ask people with [group = mygroup] [
+      set fear fear + 10
+    ]
+    
+    die
+  ]
+end
+       
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -121,10 +178,10 @@ GRAPHICS-WINDOW
 ticks
 
 BUTTON
-37
-29
-100
-62
+24
+25
+87
+58
 NIL
 setup
 NIL
@@ -142,7 +199,7 @@ INPUTBOX
 813
 71
 people-start-amount
-2
+70
 1
 0
 Number
@@ -153,10 +210,37 @@ INPUTBOX
 816
 140
 people-sight
+2
+1
+0
+Number
+
+INPUTBOX
+659
+149
+814
+209
+people-fear-retreat
 1
 1
 0
 Number
+
+BUTTON
+92
+26
+155
+59
+go
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
 
 @#$#@#$#@
 WHAT IS IT?
